@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { fetch } from "../controller/manga.controller.js";
+import { getMangaChapters } from "../controller/manga.controller.js";
 
 export const router = Router();
 
-router.route("/chapters").get(fetch);
+router.route("/:mangaId/chapters").get(getMangaChapters);
