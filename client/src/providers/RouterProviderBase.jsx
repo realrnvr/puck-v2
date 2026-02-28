@@ -3,6 +3,7 @@ import { RouterProvider } from "react-router";
 
 import App from "../App.jsx";
 import MangaDetailsPage from "../features/manga/pages/manga_details/MangaDetailsPage.jsx";
+import Test from "../features/manga/pages/test/Test.jsx";
 
 const router = createBrowserRouter([
   {
@@ -10,8 +11,12 @@ const router = createBrowserRouter([
     element: <App />,
   },
   {
-    path: "/manga-details",
+    path: "/manga-details/:mangaId",
     element: <MangaDetailsPage />,
+  },
+  {
+    path: "/test",
+    element: <Test />,
   },
 ]);
 
