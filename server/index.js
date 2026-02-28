@@ -6,13 +6,14 @@ config();
 
 import { StatusCodes } from "http-status-codes";
 import { router as mangaRouter } from "./src/router/manga.router.js";
+import { redisClient } from "./config/redisConfig.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
-    origin: process.env.CLIENT_APP_URL,
+    origin: [process.env.CLIENT_APP_URL, "http://localhost:4173"],
     credentials: true,
   }),
 );
@@ -24,8 +25,9 @@ app.get("/hello", (req, res) => {
 
 app.use("/api/v1/manga", mangaRouter);
 
-(() => {
+(async () => {
   try {
+    // await redisClient.connect();
     app.listen(PORT, () => {
       console.log("Server is Listening to PORT " + PORT + " ...");
     });
