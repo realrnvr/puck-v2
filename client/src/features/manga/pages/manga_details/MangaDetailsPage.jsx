@@ -2,8 +2,8 @@ import "./manga-details-page.css";
 
 import axios from "axios";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useEffect, useCallback, useState } from "react";
+import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
+import { useMemo, useRef, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
@@ -13,24 +13,30 @@ function MangaDetailsPage() {
 
   const [collapsedVolumes, setCollapsedVolumes] = useState(new Set());
   const [collapsedChapters, setCollapsedChapters] = useState(new Set());
+  const [order, setOrder] = useState("desc");
+
+  const [activeVolume, setActiveVolume] = useState(null);
+  const [activeChapter, setActiveChapter] = useState(null);
 
   const {
     data,
     error,
     fetchNextPage,
     hasNextPage,
+    isFetching,
     isFetchingNextPage,
     status,
   } = useInfiniteQuery({
-    queryKey: ["chapters", mangaId],
+    queryKey: ["chapters", mangaId, order],
     queryFn: async ({ pageParam = 0 }) => {
       const res = await axios.get(
-        `http://localhost:3000/api/v1/manga/${mangaId}/chapters?cursor=${pageParam}&limit=50`,
+        `http://localhost:3000/api/v1/manga/${mangaId}/chapters?cursor=${pageParam}&limit=50&order=${order}`,
       );
       return res.data;
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
+    placeholderData: keepPreviousData,
   });
 
   // Flatten + Group + Dedupe
@@ -41,27 +47,10 @@ function MangaDetailsPage() {
     const rows = [];
     const allItems = data.pages.flatMap((p) => p.data);
 
-    const sorted = [...allItems].sort((a, b) => {
-      const av = a.attributes.volume ?? "NO_VOLUME";
-      const bv = b.attributes.volume ?? "NO_VOLUME";
-
-      if (av === "NO_VOLUME" && bv !== "NO_VOLUME") return -1;
-      if (bv === "NO_VOLUME" && av !== "NO_VOLUME") return 1;
-
-      if (parseFloat(av) !== parseFloat(bv)) {
-        return parseFloat(bv) - parseFloat(av);
-      }
-
-      return (
-        parseFloat(b.attributes.chapter ?? "0") -
-        parseFloat(a.attributes.chapter ?? "0")
-      );
-    });
-
     let currentVolume = null;
     let currentChapter = null;
 
-    for (const item of sorted) {
+    for (const item of allItems) {
       if (seen.has(item.id)) continue;
       seen.add(item.id);
 
@@ -91,46 +80,37 @@ function MangaDetailsPage() {
         currentChapter = chapter;
       }
 
-      if (!collapsedChapters.has(`${volume}-${chapter}`)) {
-        rows.push({
-          type: "chapterVariant",
-          id: item.id,
-          volume,
-          chapter,
-          lang: attr.translatedLanguage,
-          title: attr.title ?? "No Title",
-          pages: attr.pages ?? 0,
-        });
-      }
+      if (collapsedChapters.has(`${volume}-${chapter}`)) continue;
+
+      rows.push({
+        type: "chapterVariant",
+        id: item.id,
+        volume,
+        chapter,
+        lang: attr.translatedLanguage,
+        title: attr.title ?? "No Title",
+        pages: attr.pages ?? 0,
+      });
     }
 
     return rows;
   }, [data, collapsedVolumes, collapsedChapters]);
 
-  const latestVolume = useMemo(() => {
-    const firstVolume = flatList.find((r) => r.type === "volume");
-    return firstVolume?.volume ?? null;
-  }, [flatList]);
-
-  const latestChapter = useMemo(() => {
-    const firstChapter = flatList.find((r) => r.type === "chapterHeader");
-    return firstChapter?.chapter ?? null;
-  }, [flatList]);
-
-  const [activeVolume, setActiveVolume] = useState(latestVolume);
-  const [activeChapter, setActiveChapter] = useState(latestChapter);
-
   useEffect(() => {
-    if (latestVolume) setActiveVolume(latestVolume);
-    if (latestChapter) setActiveChapter(latestChapter);
-  }, [latestVolume, latestChapter]);
+    if (!flatList.length) return;
 
-  const getScrollElement = useCallback(() => parentRef.current, []);
+    const firstVolume = flatList.find((r) => r.type === "volume");
+    const firstChapter = flatList.find((r) => r.type === "chapterHeader");
 
-  // Virtualizer
+    setActiveVolume(firstVolume?.volume ?? null);
+    setActiveChapter(firstChapter?.chapter ?? null);
+  }, [flatList]);
+
+  const getScrollElement = parentRef.current;
+
   const rowVirtualizer = useVirtualizer({
     count: hasNextPage ? flatList.length + 1 : flatList.length,
-    getScrollElement,
+    getScrollElement: () => getScrollElement,
     estimateSize: (index) => {
       const type = flatList[index]?.type;
       if (type === "volume") return 55;
@@ -143,12 +123,12 @@ function MangaDetailsPage() {
 
   const virtualItems = rowVirtualizer.getVirtualItems();
 
-  // FIX: Re-measure when structure changes
+  // Re-measure when structure changes
   useEffect(() => {
     rowVirtualizer.measure();
   }, [flatList, rowVirtualizer]);
 
-  // Infinite Fetch
+  // Infinite Fetch Trigger
   useEffect(() => {
     const lastItem = virtualItems[virtualItems.length - 1];
     if (!lastItem) return;
@@ -156,7 +136,8 @@ function MangaDetailsPage() {
     if (
       lastItem.index >= flatList.length - 1 &&
       hasNextPage &&
-      !isFetchingNextPage
+      !isFetchingNextPage &&
+      !isFetching
     ) {
       fetchNextPage();
     }
@@ -166,9 +147,10 @@ function MangaDetailsPage() {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
+    isFetching,
   ]);
 
-  // Sticky Header
+  // Sticky Header Scroll Logic
   useEffect(() => {
     const scrollEl = parentRef.current;
     if (!scrollEl) return;
@@ -191,7 +173,6 @@ function MangaDetailsPage() {
       let foundVolume = null;
       let foundChapter = null;
 
-      // Scan backwards
       for (let i = currentIndex; i >= 0; i--) {
         const row = flatList[i];
 
@@ -205,7 +186,6 @@ function MangaDetailsPage() {
         }
       }
 
-      // If no chapter found (we are on volume header)
       if (!foundChapter && foundVolume) {
         for (let i = currentIndex; i < flatList.length; i++) {
           const row = flatList[i];
@@ -216,13 +196,8 @@ function MangaDetailsPage() {
         }
       }
 
-      if (foundVolume !== activeVolume) {
-        setActiveVolume(foundVolume);
-      }
-
-      if (foundChapter !== activeChapter) {
-        setActiveChapter(foundChapter);
-      }
+      setActiveVolume(foundVolume);
+      setActiveChapter(foundChapter);
     };
 
     scrollEl.addEventListener("scroll", handleScroll, { passive: true });
@@ -230,9 +205,8 @@ function MangaDetailsPage() {
     return () => {
       scrollEl.removeEventListener("scroll", handleScroll);
     };
-  }, [flatList, rowVirtualizer, activeVolume, activeChapter]);
+  }, [flatList, rowVirtualizer]);
 
-  // Toggles
   const toggleVolume = (volume) => {
     setCollapsedVolumes((prev) => {
       const newSet = new Set(prev);
@@ -275,6 +249,10 @@ function MangaDetailsPage() {
     ),
   ];
 
+  function handleOrder() {
+    setOrder((prev) => (prev === "desc" ? "asc" : "desc"));
+  }
+
   return (
     <div className="page-wrapper">
       <div className="top-controls">
@@ -288,14 +266,19 @@ function MangaDetailsPage() {
         </select>
 
         <button onClick={scrollToTop}>⬆ Top</button>
+        <button onClick={handleOrder}>
+          {order === "desc" ? "Descending" : "Ascending"}
+        </button>
       </div>
 
-      {
-        <div className="sticky-global-header">
-          {activeVolume === "NO_VOLUME" ? "Volume —" : `Volume ${activeVolume}`}
-          {<span className="sticky-chapter"> • Chapter {activeChapter}</span>}
-        </div>
-      }
+      <div className="sticky-global-header">
+        {activeVolume === "NO_VOLUME"
+          ? "Volume —"
+          : `Volume ${activeVolume ?? ""}`}
+        {activeChapter && (
+          <span className="sticky-chapter"> • Chapter {activeChapter}</span>
+        )}
+      </div>
 
       <div
         ref={parentRef}
@@ -314,7 +297,7 @@ function MangaDetailsPage() {
 
             return (
               <div
-                key={virtualRow.index}
+                key={virtualRow.key}
                 style={{
                   position: "absolute",
                   top: 0,
@@ -352,7 +335,7 @@ function MangaDetailsPage() {
                       <span className="language-badge">
                         {row.lang?.toUpperCase()}
                       </span>
-                      <span>{row.title} </span>
+                      <span>{row.title}</span>
                       <span>{row.pages} pages</span>
                     </div>
                   </div>
