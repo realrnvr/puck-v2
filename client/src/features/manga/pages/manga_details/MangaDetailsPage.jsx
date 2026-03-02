@@ -1,4 +1,4 @@
-import "./manga-details-page.css";
+// import "./manga-details-page.css";
 
 import axios from "axios";
 
