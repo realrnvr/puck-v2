@@ -2,8 +2,8 @@ import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router";
 
 import App from "../App.jsx";
-import MangaDetailsPage from "../features/manga/pages/manga_details/MangaDetailsPage.jsx";
 import Test from "../features/manga/pages/test/Test.jsx";
+import MangaDetails from "../features/manga/pages/manga_details/MangaDetails.jsx";
 
 const router = createBrowserRouter([
   {
@@ -12,7 +12,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/manga-details/:mangaId",
-    element: <MangaDetailsPage />,
+    element: <MangaDetails />,
   },
   {
     path: "/test/:mangaId",
