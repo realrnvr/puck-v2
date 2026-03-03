@@ -1,91 +1,16 @@
-/* Layout */
-.reader-container {
-  display: flex;
-  flex-direction: column;
-  height: 700px;
-  background: #fafafa;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+.manga-chapter-index {
 }
 
-/* Top Indicator */
-.reader-indicator {
-  padding: 14px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e5e5;
+.manga-chapter-index__list {
+  border: 1px solid red;
 }
 
-.indicator-content {
-  display: flex;
-  gap: 12px;
-  font-weight: 600;
-  font-size: 14px;
-  color: #222;
-}
-
-.indicator-volume {
-  color: #111;
-}
-
-.indicator-chapter {
-  color: #666;
-}
-
-/* Virtuoso List */
-.reader-list {
-  flex: 1;
-  border: 1px solid yellow;
-}
-
-/* Volume Header */
-.volume-header {
-  padding: 16px 20px;
-  font-size: 16px;
+.manga-chapter-index__volume-header {
+  padding: 1rem;
+  font-size: 1rem;
   font-weight: 600;
   background: #f2f2f2;
   color: #111;
   border-top: 1px solid #e5e5e5;
   border-bottom: 1px solid #e5e5e5;
-}
-
-/* Chapter Header */
-.chapter-header {
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #444;
-  background: #ffffff;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-/* Chapter Variant Card */
-.chapter-card {
-  padding: 14px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #f3f3f3;
-  transition: background 0.15s ease;
-}
-
-.chapter-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #222;
-  margin-bottom: 4px;
-}
-
-.chapter-meta {
-  font-size: 12px;
-  color: #777;
-  display: flex;
-  gap: 12px;
-}
-
-.loader {
-  padding: 20px;
-  text-align: center;
-  color: #777;
-  font-size: 14px;
 }

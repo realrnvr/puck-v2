@@ -1,0 +1,38 @@
+.manga-chapter-variants__chapter-header {
+  padding: 1rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #444;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.manga-chapter-variants__chapter-variants {
+  border: 1px solid pink;
+}
+
+.manga-chapter-variants__chapter-card {
+  padding: 0.7rem 2rem;
+  background: #ffffff;
+  border-bottom: 1px solid #f3f3f3;
+}
+
+.manga-chapter-variants__chapter-title {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #222;
+}
+
+.manga-chapter-variants__chapter-meta {
+  font-size: 0.7rem;
+  color: #777;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.manga-chapter-varaints__load-more {
+  display: flex;
+  justify-content: center;
+  padding: 0.7rem;
+}

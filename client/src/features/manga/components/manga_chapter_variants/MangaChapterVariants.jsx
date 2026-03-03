@@ -1,10 +1,22 @@
 import "./manga-chapter-variants.css";
 
-import axios from "axios";
+import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { axiosMangaInstance } from "../../api/axios.manga";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
+function MangaChapterVariants({ mangaId, row }) {
+  const [expandedChapters, setExpandedChapters] = useState(new Set());
+  const isExpanded = expandedChapters.has(`${row.volume}-${row.chapter}`);
 
-function MangaChapterVariants({ mangaId, row, isExpanded, toggleChapter }) {
+  const toggleChapter = (volume, chapter) => {
+    const key = `${volume}-${chapter}`;
+    setExpandedChapters((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
   const {
     data,
     error,
@@ -12,32 +24,30 @@ function MangaChapterVariants({ mangaId, row, isExpanded, toggleChapter }) {
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-    status,
+    isPending,
   } = useInfiniteQuery({
     queryKey: ["chapterVariants", mangaId, row.volume, row.chapter],
     queryFn: async ({ pageParam }) => {
-      const res = await axios.get(
-        `http://localhost:3000/api/v1/manga/${mangaId}/chapter`,
-        {
-          params: {
-            volume: row.volume,
-            chapter: row.chapter,
-            offset: pageParam,
-            limit: 100,
-          },
+      const res = await axiosMangaInstance.get(`/${mangaId}/chapter`, {
+        params: {
+          volume: row.volume,
+          chapter: row.chapter,
+          offset: pageParam,
+          limit: 100,
         },
-      );
+      });
       return res.data;
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     enabled: isExpanded,
+    placeholderData: keepPreviousData,
   });
 
   return (
-    <div>
+    <>
       <div
-        className="chapter-header clickable"
+        className="manga-chapter-variants__chapter-header"
         onClick={() => toggleChapter(row.volume, row.chapter)}
       >
         <span>
@@ -47,14 +57,10 @@ function MangaChapterVariants({ mangaId, row, isExpanded, toggleChapter }) {
       </div>
 
       {isExpanded && (
-        <div className="chapter-variants">
-          {status === "pending" && (
-            <div className="loader">Loading variants...</div>
-          )}
+        <div className="manga-chapter-variants__chapter-variants">
+          {isPending && <div>Loading variants...</div>}
 
-          {status === "error" && (
-            <div className="loader">Error: {error.message}</div>
-          )}
+          {error && <div>Error: {error.message}</div>}
 
           {data?.pages.map((page, pageIndex) => (
             <div key={pageIndex}>
@@ -68,12 +74,15 @@ function MangaChapterVariants({ mangaId, row, isExpanded, toggleChapter }) {
                 const user = item.relationships?.find((r) => r.type === "user");
 
                 return (
-                  <div key={item.id} className="chapter-card">
-                    <div className="chapter-title">
+                  <div
+                    key={item.id}
+                    className="manga-chapter-variants__chapter-card"
+                  >
+                    <div className="manga-chapter-variants__chapter-title">
                       {attr.title ?? `Ch. ${attr.chapter}`}
                     </div>
 
-                    <div className="chapter-meta">
+                    <div className="manga-chapter-variants__chapter-meta">
                       <span>{attr.translatedLanguage?.toUpperCase()}</span>
                       <span>{group?.attributes?.name ?? "No Group"}</span>
                       <span>{user?.attributes?.username ?? ""}</span>
@@ -84,24 +93,21 @@ function MangaChapterVariants({ mangaId, row, isExpanded, toggleChapter }) {
             </div>
           ))}
 
-          <div>
+          <div className="manga-chapter-varaints__load-more">
             <button
               onClick={() => fetchNextPage()}
               disabled={!hasNextPage || isFetching}
-              className="load-more"
             >
               {isFetchingNextPage
                 ? "Loading more..."
                 : hasNextPage
                   ? "Load More"
-                  : "Nothing more to load"}
+                  : "..."}
             </button>
           </div>
-
-          <div>{isFetching && !isFetchingNextPage ? "Fetching..." : null}</div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
