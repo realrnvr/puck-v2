@@ -5,8 +5,7 @@ import { config } from "dotenv";
 config();
 
 import { StatusCodes } from "http-status-codes";
-import { router as mangaRouter } from "./src/router/manga.router.js";
-import { redisClient } from "./config/redisConfig.js";
+import { router as mangaRouter } from "./router/manga.router.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,7 +26,6 @@ app.use("/api/v1/manga", mangaRouter);
 
 (async () => {
   try {
-    // await redisClient.connect();
     app.listen(PORT, () => {
       console.log("Server is Listening to PORT " + PORT + " ...");
     });
