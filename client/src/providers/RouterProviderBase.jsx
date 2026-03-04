@@ -4,6 +4,7 @@ import { RouterProvider } from "react-router";
 import App from "../App.jsx";
 import Test from "../features/manga/pages/test/Test.jsx";
 import MangaDetails from "../features/manga/pages/manga_details/MangaDetails.jsx";
+import MangaViwer from "../features/manga/pages/manga_viewer/MangaViwer.jsx";
 
 const router = createBrowserRouter([
   {
@@ -11,12 +12,16 @@ const router = createBrowserRouter([
     element: <App />,
   },
   {
+    path: "/test/:chapterId",
+    element: <Test />,
+  },
+  {
     path: "/manga-details/:mangaId",
     element: <MangaDetails />,
   },
   {
-    path: "/test/:mangaId",
-    element: <Test />,
+    path: "/chapter/:chapterId",
+    element: <MangaViwer />,
   },
 ]);
 
