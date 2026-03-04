@@ -35,6 +35,9 @@ function MangaChaptersIndex({ mangaId }) {
       if (!expandedVolumes.has(volume)) continue;
 
       const chapters = Object.values(volumeObj.chapters);
+      chapters.sort((a, b) => {
+        return parseFloat(a.chapter) - parseFloat(b.chapter);
+      });
 
       for (const chapterObj of chapters) {
         const chapter = chapterObj.chapter ?? "0";
@@ -51,6 +54,8 @@ function MangaChaptersIndex({ mangaId }) {
 
     return result;
   }, [data, expandedVolumes]);
+
+  console.log(rows);
 
   const toggleVolume = (volume) => {
     setExpandedVolumes((prevExpandedVolumes) => {

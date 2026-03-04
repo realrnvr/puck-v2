@@ -3,19 +3,25 @@ import "./manga-chapter-variants.css";
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { axiosMangaInstance } from "../../api/axios.manga";
+import { useNavigate } from "react-router";
 
 function MangaChapterVariants({ mangaId, row }) {
   const [expandedChapters, setExpandedChapters] = useState(new Set());
   const isExpanded = expandedChapters.has(`${row.volume}-${row.chapter}`);
+  const navigate = useNavigate();
 
-  const toggleChapter = (volume, chapter) => {
+  function toggleChapter(volume, chapter) {
     const key = `${volume}-${chapter}`;
     setExpandedChapters((prev) => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
-  };
+  }
+
+  function handleChapterNavigation(chapterId) {
+    navigate(`/chapter/${chapterId}`);
+  }
 
   const {
     data,
@@ -77,6 +83,7 @@ function MangaChapterVariants({ mangaId, row }) {
                   <div
                     key={item.id}
                     className="manga-chapter-variants__chapter-card"
+                    onClick={() => handleChapterNavigation(item.id)}
                   >
                     <div className="manga-chapter-variants__chapter-title">
                       {attr.title ?? `Ch. ${attr.chapter}`}

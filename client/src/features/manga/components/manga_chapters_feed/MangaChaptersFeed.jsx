@@ -6,6 +6,7 @@ import { axiosMangaInstance } from "../../api/axios.manga";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Virtuoso } from "react-virtuoso";
+import { useNavigate } from "react-router";
 
 export default function MangaChaptersFeed({ mangaId }) {
   const [order, setOrder] = useState("desc");
@@ -14,6 +15,11 @@ export default function MangaChaptersFeed({ mangaId }) {
   const [activeChapter, setActiveChapter] = useState(null);
 
   const parentRef = useRef(null);
+  const navigate = useNavigate();
+
+  function handleChapterNavigation(chapterId) {
+    navigate(`/chapter/${chapterId}`);
+  }
 
   const {
     data,
@@ -184,7 +190,10 @@ export default function MangaChaptersFeed({ mangaId }) {
           }
 
           return (
-            <div className="manga-chapters-feed__chapter-card">
+            <div
+              className="manga-chapters-feed__chapter-card"
+              onClick={() => handleChapterNavigation(row.id)}
+            >
               <div className="manga-chapters-feed__meta">
                 <span className="manga-chapters-feed__badge">
                   {row.lang?.toUpperCase()}
