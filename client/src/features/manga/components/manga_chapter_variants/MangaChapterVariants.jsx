@@ -19,8 +19,10 @@ function MangaChapterVariants({ mangaId, row }) {
     });
   }
 
-  function handleChapterNavigation(chapterId) {
-    navigate(`/chapter/${chapterId}`);
+  function handleChapterNavigation(chapter) {
+    navigate(
+      `/test/${mangaId}/${chapter.id}/${chapter.attributes.translatedLanguage}`,
+    );
   }
 
   const {
@@ -83,7 +85,7 @@ function MangaChapterVariants({ mangaId, row }) {
                   <div
                     key={item.id}
                     className="manga-chapter-variants__chapter-card"
-                    onClick={() => handleChapterNavigation(item.id)}
+                    onClick={() => handleChapterNavigation(item)}
                   >
                     <div className="manga-chapter-variants__chapter-title">
                       {attr.title ?? `Ch. ${attr.chapter}`}
