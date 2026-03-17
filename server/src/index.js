@@ -6,6 +6,7 @@ config();
 
 import { StatusCodes } from "http-status-codes";
 import { router as mangaRouter } from "./router/manga.router.js";
+import { errorHandler } from "./middleware/errorHandler.middleware.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,6 +24,8 @@ app.get("/hello", (req, res) => {
 });
 
 app.use("/api/v1/manga", mangaRouter);
+
+app.use(errorHandler);
 
 (async () => {
   try {
