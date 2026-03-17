@@ -17,8 +17,10 @@ export default function MangaChaptersFeed({ mangaId }) {
   const parentRef = useRef(null);
   const navigate = useNavigate();
 
-  function handleChapterNavigation(chapterId) {
-    navigate(`/chapter/${chapterId}`);
+  function handleChapterNavigation(chapter) {
+    navigate(
+      `/test/${mangaId}/${chapter.id}/${chapter.attributes.translatedLanguage}`,
+    );
   }
 
   const {
