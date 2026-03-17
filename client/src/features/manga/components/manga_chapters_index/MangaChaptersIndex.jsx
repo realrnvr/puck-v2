@@ -55,8 +55,6 @@ function MangaChaptersIndex({ mangaId }) {
     return result;
   }, [data, expandedVolumes]);
 
-  console.log(rows);
-
   const toggleVolume = (volume) => {
     setExpandedVolumes((prevExpandedVolumes) => {
       const nextExpandedVolumes = new Set(prevExpandedVolumes);
