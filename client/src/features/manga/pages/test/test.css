@@ -31,16 +31,41 @@
 .chapter-meta {
   border: 1px solid blue;
   display: grid;
-  grid-template-rows: 1fr 4fr;
+  grid-template-rows: 1fr 5fr;
 }
 
 .meta-info {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 0.5rem;
   border: 1px solid yellow;
 }
 
 .chapter-list {
   height: 100%;
+}
+
+.reader__count {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem;
+}
+
+.reader__left {
+  display: grid;
+  grid-template-rows: 1fr 5fr;
+}
+
+.control {
+  border: 1px solid red;
+  height: 400px;
+  position: absolute;
+  bottom: 100px;
+  width: 80%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
 }
