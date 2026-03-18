@@ -45,8 +45,6 @@ export async function getMangaAggregate(req, res) {
   const translatedLanguage = req.query["translatedLanguage[]"];
   const groups = req.query["groups[]"];
 
-  console.log(req.url);
-
   const response = await axios.get(
     `https://api.mangadex.org/manga/${mangaId}/aggregate`,
     {
