@@ -10,6 +10,8 @@ import Share from "yet-another-react-lightbox/plugins/share";
 import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Counter from "yet-another-react-lightbox/plugins/counter";
+import Select from "react-select";
+import Window from "../../../window_system/components/window/Window";
 
 import { createModule } from "yet-another-react-lightbox";
 import { useNavigate, useParams } from "react-router";
@@ -22,7 +24,6 @@ import { axiosMangaInstance } from "../../api/axios.manga";
 import { useMemo, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { Range } from "react-range";
-import Select from "react-select";
 
 // const slides = [
 //   { src: "/mock-1.jpg" },
@@ -32,6 +33,9 @@ import Select from "react-select";
 //   { src: "/mock-5.jpg" },
 //   { src: "/mock-6.jpg" },
 // ];
+
+// TODO: 1. Next chapter when reach end and vice-versa
+// 2. Jump to page
 
 function MyComponent({ children }) {
   const navigate = useNavigate();
@@ -385,7 +389,8 @@ function MySecondComponent({
   children,
   control: { carousel, setCarousel, animation, setAnimation, zoom, setZoom },
 }) {
-  console.log(carousel);
+  const [dialog, setDialog] = useState(false);
+
   return (
     <>
       {children}
@@ -1076,6 +1081,23 @@ function MySecondComponent({
             </p>
           </div>
         </div>
+        <div>
+          <button onClick={() => setDialog(true)}>open dialog</button>
+        </div>
+        {dialog && (
+          <Window
+            defaultProps={{
+              x: 0,
+              y: 0,
+              width: 320,
+              height: 200,
+            }}
+            style={{ background: "red" }}
+            state={{ setDialog }}
+          >
+            Window 1
+          </Window>
+        )}
       </div>
     </>
   );
@@ -1139,11 +1161,6 @@ export default function Test() {
   return (
     <div className="viewer">
       <LightBox
-        on={{
-          download: () => {
-            console.log("loading...");
-          },
-        }}
         slides={slides}
         plugins={[
           Inline,
@@ -1153,19 +1170,19 @@ export default function Test() {
           Share,
           Slideshow,
           Zoom,
-          MyPlugin,
-          // MySecondPlugin,
+          // MyPlugin,
+          MySecondPlugin,
         ]}
         carousel={{
           finite: carousel.finite,
-          preload: carousel.preload,
-          padding: `${carousel.padding}px`,
-          spacing: `${carousel.spacing}%`,
-          imageFit: carousel.imageFit,
+          preload: carousel.preload[0],
+          padding: `${carousel.padding[0]}px`,
+          spacing: `${carousel.spacing[0]}%`,
+          imageFit: carousel.imageFit.value,
         }}
         animation={{
           fade: 250,
-          swipe: animation.swipe,
+          swipe: animation.swipe[0],
           easing: {
             fade: "ease",
             swipe: animation.easingSwipe.value,
@@ -1173,7 +1190,17 @@ export default function Test() {
           },
           zoom: animation.zoom[0],
         }}
-        zoom={zoom}
+        zoom={{
+          minZoom: zoom.minZoom[0],
+          maxZoomPixelRatio: zoom.maxZoomPixelRatio[0],
+          zoomInMultiplier: zoom.zoomInMultiplier[0],
+          doubleTapDelay: zoom.doubleTapDelay[0],
+          doubleClickDelay: zoom.doubleClickDelay[0],
+          doubleClickMaxStops: zoom.doubleClickMaxStops[0],
+          keyboardMoveDistance: zoom.keyboardMoveDistance[0],
+          wheelZoomDistanceFactor: zoom.wheelZoomDistanceFactor[0],
+          pinchZoomDistanceFactor: zoom.pinchZoomDistanceFactor[0],
+        }}
         control={{
           carousel,
           setCarousel,
