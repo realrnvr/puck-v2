@@ -5,6 +5,7 @@ import App from "../App.jsx";
 import Test from "../features/manga/pages/test/Test.jsx";
 import MangaDetails from "../features/manga/pages/manga_details/MangaDetails.jsx";
 import MangaViwer from "../features/manga/pages/manga_viewer/MangaViwer.jsx";
+// import LightBoxBase from "../features/manga/viewer/core/lightbox/LightBoxBase.jsx";
 
 const router = createBrowserRouter([
   {
