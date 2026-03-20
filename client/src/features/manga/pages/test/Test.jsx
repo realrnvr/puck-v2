@@ -21,7 +21,7 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { axiosMangaInstance } from "../../api/axios.manga";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { Range } from "react-range";
 
@@ -387,7 +387,16 @@ const animationOptions = [
 // second comp
 function MySecondComponent({
   children,
-  control: { carousel, setCarousel, animation, setAnimation, zoom, setZoom },
+  control: {
+    carousel,
+    setCarousel,
+    animation,
+    setAnimation,
+    zoom,
+    setZoom,
+    slideshow,
+    setSlideshow,
+  },
 }) {
   const [dialog, setDialog] = useState(false);
 
@@ -1080,9 +1089,53 @@ function MySecondComponent({
               values: {zoom.pinchZoomDistanceFactor}
             </p>
           </div>
-        </div>
-        <div>
-          <button onClick={() => setDialog(true)}>open dialog</button>
+          <div>
+            <button onClick={() => setDialog(true)}>open dialog</button>
+          </div>
+          <div>
+            <Range
+              label="Select your value"
+              step={1}
+              min={0}
+              max={5000}
+              values={slideshow.delay}
+              onChange={(e) =>
+                setSlideshow((prevSlideshow) => {
+                  return {
+                    ...prevSlideshow,
+                    delay: e,
+                  };
+                })
+              }
+              renderTrack={({ props, children }) => (
+                <div
+                  {...props}
+                  style={{
+                    ...props.style,
+                    height: "6px",
+                    width: "100%",
+                    backgroundColor: "#fff",
+                  }}
+                >
+                  {children}
+                </div>
+              )}
+              renderThumb={({ props }) => (
+                <div
+                  {...props}
+                  key={props.key}
+                  style={{
+                    ...props.style,
+                    height: "15px",
+                    width: "15px",
+                    backgroundColor: "pink",
+                    borderRadius: "20px",
+                  }}
+                />
+              )}
+            />
+            <p style={{ color: "#fff" }}>values: {slideshow.delay}</p>
+          </div>
         </div>
         {dialog && (
           <Window
@@ -1142,6 +1195,12 @@ export default function Test() {
     pinchZoomDistanceFactor: [100],
   });
 
+  // slideshow
+  const [slideshow, setSlideshow] = useState({
+    autoplay: false,
+    delay: [3000],
+  });
+
   const {
     data: imageData,
     // isError: isImageError,
@@ -1161,14 +1220,14 @@ export default function Test() {
   return (
     <div className="viewer">
       <LightBox
-        slides={slides}
+        slides={slides || []}
         plugins={[
+          Slideshow,
           Inline,
           Counter,
           Fullscreen,
           Download,
           Share,
-          Slideshow,
           Zoom,
           // MyPlugin,
           MySecondPlugin,
@@ -1208,6 +1267,12 @@ export default function Test() {
           setAnimation,
           zoom,
           setZoom,
+          slideshow,
+          setSlideshow,
+        }}
+        slideshow={{
+          autoplay: slideshow.autoplay,
+          delay: slideshow.delay[0],
         }}
       />
     </div>
