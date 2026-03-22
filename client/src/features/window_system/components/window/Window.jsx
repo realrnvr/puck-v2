@@ -1,60 +1,91 @@
 import "./window.css";
 
 import { Rnd } from "react-rnd";
-import { useWindowManager } from "../../hooks/useWindowManager";
 import { createPortal } from "react-dom";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useWindowManager } from "../../hooks/useWindowManager";
+
+import getCenteredPosition from "../../utils/helper";
 
 export default function Window({
   children,
   defaultProps,
   style,
-  state: { setDialog },
+  state: { setDialog, dialog },
+  id,
 }) {
+  const rndRef = useRef(null);
   const manager = useWindowManager();
 
-  function handleFocus(node) {
-    manager.bringToFront(node);
+  const [position, setPosition] = useState(() =>
+    getCenteredPosition(defaultProps.width, defaultProps.height),
+  );
+
+  function handleFocus() {
+    manager.bringToFrontById(id);
   }
-
-  function getCenteredPosition(width, height) {
-    const x = window.innerWidth / 2 - width / 2;
-    const y = window.innerHeight / 2 - height / 2;
-
-    return { x, y };
-  }
-
-  const { x, y } = getCenteredPosition(defaultProps.width, defaultProps.height);
 
   useEffect(() => {
-    manager.registerWindow();
+    const instance = rndRef.current;
+    if (!instance) {
+      return;
+    }
+
+    manager.registerWindow(id, instance);
 
     return () => {
-      manager.unregisterWindow();
+      manager.unregisterWindow(id, instance);
     };
-  }, [manager]);
+  }, [manager, id]);
+
+  useEffect(() => {
+    function handleResize() {
+      const maxX = window.innerWidth - defaultProps.width;
+      const maxY = window.innerHeight - defaultProps.height;
+
+      setPosition((prev) => {
+        return {
+          x: Math.min(Math.max(prev.x, 0), maxX),
+          y: Math.min(Math.max(prev.y, 0), maxY),
+        };
+      });
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [defaultProps.width, defaultProps.height]);
 
   return createPortal(
-    <Rnd
-      default={{ ...defaultProps, x, y }}
-      style={{
-        zIndex: 1,
-        ...style,
-      }}
-      bounds={"parent"}
-      dragHandleClassName="window-header"
-      enableResizing={false}
-      onDragStart={(_, data) => handleFocus(data.node)}
-    >
-      <div className="window">
-        <div className="window-header">
-          <button className="window-button" onClick={() => setDialog(false)}>
-            {"[ x ]"}
-          </button>
-        </div>
-        <div className="window-content">{children}</div>
-      </div>
-    </Rnd>,
+    <div ref={rndRef} style={{ position: "relative" }}>
+      {dialog && (
+        <Rnd
+          default={defaultProps}
+          style={{
+            ...style,
+          }}
+          position={position}
+          size={{ width: defaultProps.width, height: defaultProps.height }}
+          bounds="window"
+          dragHandleClassName="window-header"
+          enableResizing={false}
+          onDragStart={() => handleFocus()}
+          onDragStop={(_, d) => setPosition({ x: d.x, y: d.y })}
+        >
+          <div className="window">
+            <header className="window-header">
+              <h3 className="window-title">{defaultProps.title}</h3>
+              <button
+                className="window-button"
+                onClick={() => setDialog(false)}
+              >
+                {"[ x ]"}
+              </button>
+            </header>
+            <div className="window-content">{children}</div>
+          </div>
+        </Rnd>
+      )}
+    </div>,
     document.body,
   );
 }

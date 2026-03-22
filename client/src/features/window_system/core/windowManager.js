@@ -1,33 +1,28 @@
-class WindowManager {
+export class WindowManager {
   constructor() {
+    console.log("new manager instance");
+    this.windows = new Map();
     this.z = 1;
-    this.openWindows = 0;
   }
 
-  bringToFront(node) {
-    if (!node) return;
+  bringToFrontById(id) {
+    if (!id) return;
     this.z++;
-    console.log(node);
-    node.style.zIndex = this.z;
+    this.windows.get(id).style.zIndex = this.z;
   }
 
-  registerWindow() {
-    this.openWindows++;
+  registerWindow(id, node) {
+    this.windows.set(id, node);
+    this.bringToFrontById(id);
     this.updateScrollLock();
   }
 
-  unregisterWindow() {
-    this.openWindows = Math.max(0, this.openWindows - 1);
+  unregisterWindow(id) {
+    this.windows.delete(id);
     this.updateScrollLock();
   }
 
   updateScrollLock() {
-    if (this.openWindows > 0) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = this.windows.size > 0 ? "hidden" : "auto";
   }
 }
-
-export const windowManager = new WindowManager();

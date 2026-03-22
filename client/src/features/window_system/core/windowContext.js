@@ -1,4 +1,4 @@
 import { createContext } from "react";
-import { windowManager } from "./windowManager";
+import { windowClient } from "../window_client/windowClient";
 
-export const WindowContext = createContext(windowManager);
+export const WindowContext = createContext(windowClient);
