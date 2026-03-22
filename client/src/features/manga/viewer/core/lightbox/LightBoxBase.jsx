@@ -11,7 +11,7 @@ import Share from "yet-another-react-lightbox/plugins/share";
 import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { animationOptions, imageFitOptions } from "../../assets/data";
 import {
@@ -54,6 +54,16 @@ export default function LightBoxBase() {
     wheelZoomDistanceFactor: [100],
     pinchZoomDistanceFactor: [100],
   });
+
+  // slideshow
+  const [slideshow, setSlideshow] = useState({
+    autoplay: false,
+    delay: [3000],
+  });
+
+  // page index
+  const [pageIndex, setPageIndex] = useState(0);
+  const deferredPageIndex = useDeferredValue(pageIndex);
 
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["viewerAggregate", mangaId, language],
@@ -230,7 +240,8 @@ export default function LightBoxBase() {
   return (
     <div className="light-box-base">
       <Lightbox
-        slides={slides}
+        index={deferredPageIndex}
+        slides={slides || []}
         plugins={[
           Inline,
           Counter,
@@ -276,6 +287,11 @@ export default function LightBoxBase() {
           setAnimation,
           zoom,
           setZoom,
+          slideshow,
+          setSlideshow,
+          pageIndex,
+          setPageIndex,
+          slidesLength: slides?.length - 1,
         }}
         reader={{
           activeChapter,
@@ -304,6 +320,11 @@ export default function LightBoxBase() {
           fetchNextPage,
           isFetching,
           isFetchingNextPage,
+        }}
+        on={{
+          view: ({ index: currentIndex }) => {
+            setPageIndex(currentIndex);
+          },
         }}
       />
       ;
