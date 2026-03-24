@@ -14,7 +14,6 @@ export default function Reader({ children, reader, control }) {
   // window state
   const [imageFit, setImageFit] = useState(false);
   const [behaviors, setBehaviors] = useState(false);
-
   const manager = useWindowManager();
 
   return (
