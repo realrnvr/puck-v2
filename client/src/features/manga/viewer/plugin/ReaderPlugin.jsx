@@ -6,5 +6,5 @@ const ReaderModule = createModule("Reader", Reader);
 
 export default function ReaderPlugin({ addSibling, contains }) {
   addSibling("controller", ReaderModule);
-  console.log("Contains Reader Module:", contains("Reader"));
+  // console.log("Contains Reader Module:", contains("Reader"));
 }
