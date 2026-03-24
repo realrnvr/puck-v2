@@ -1,6 +1,5 @@
 export class WindowManager {
   constructor() {
-    console.log("new manager instance");
     this.windows = new Map();
     this.z = 1;
   }
