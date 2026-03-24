@@ -21,10 +21,18 @@ import {
 } from "@tanstack/react-query";
 import { axiosMangaInstance } from "../../../api/axios.manga";
 import ReaderPlugin from "../../plugin/ReaderPlugin";
+import RoomPlugin from "../../../pages/test/Test";
+import { useRef } from "react";
+import { useSocket } from "../../../../../core/socket/hooks/useSocket";
+import { useEffect } from "react";
+import { CustomCounterPlugin } from "../../plugin/CustomCounterPlugin";
 
 export default function LightBoxBase() {
   const { mangaId, chapterId, language } = useParams();
   const navigate = useNavigate();
+  const isRemoteUpdate = useRef(false);
+  const socket = useSocket();
+
   // carousel
   const [carousel, setCarousel] = useState({
     finite: true,
@@ -64,6 +72,13 @@ export default function LightBoxBase() {
   // page index
   const [pageIndex, setPageIndex] = useState(0);
   const deferredPageIndex = useDeferredValue(pageIndex);
+
+  // room state
+  const [roomInput, setRoomInput] = useState("");
+  const [joinedRoom, setJoinedRoom] = useState(null);
+  const [isHost, setIsHost] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
 
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["viewerAggregate", mangaId, language],
@@ -114,7 +129,7 @@ export default function LightBoxBase() {
     return result;
   }, [data]);
 
-  const index = useMemo(
+  const chapterIndex = useMemo(
     () =>
       rows?.findIndex(
         (item) => item.type === "chapter" && item?.chapterId?.has(chapterId),
@@ -122,42 +137,42 @@ export default function LightBoxBase() {
     [rows, chapterId],
   );
 
-  function getNextChapter(rows, index) {
+  function getNextChapter(index) {
     if (index === -1) return null;
 
     for (let i = index + 1; i < rows.length; ++i) {
-      if (rows[i].type === "chapter") return rows[i];
+      if (rows[i].type === "chapter")
+        return rows[i].chapterId.values().next().value;
     }
 
     return null;
   }
 
-  function getPrevChapter(rows, index) {
+  function getPrevChapter(index) {
     if (index === -1) return null;
 
     for (let i = index - 1; i >= 0; --i) {
-      if (rows[i].type === "chapter") return rows[i];
+      if (rows[i].type === "chapter")
+        return rows[i].chapterId.values().next().value;
     }
 
     return null;
   }
 
   function handleNextChapter() {
-    const next = getNextChapter(rows, index);
+    const next = getNextChapter(chapterIndex);
     if (!next) return;
 
-    navigate(
-      `/test/${mangaId}/${next.chapterId.values().next().value}/${language}`,
-    );
+    // setPageIndex(0);
+    navigate(`/test/${mangaId}/${next}/${language}`);
   }
 
   function handlePrevChapter() {
-    const prev = getPrevChapter(rows, index);
+    const prev = getPrevChapter(chapterIndex);
     if (!prev) return;
 
-    navigate(
-      `/test/${mangaId}/${prev.chapterId.values().next().value}/${language}`,
-    );
+    // setPageIndex(0);
+    navigate(`/test/${mangaId}/${prev}/${language}`);
   }
 
   function handleOnClickNavigation({ newChapterId, newLanguage }) {
@@ -181,8 +196,8 @@ export default function LightBoxBase() {
     (item) => item.type === "manga",
   );
 
-  const activeChapter = rows?.[index];
-  const activeVolume = rows?.[index]?.volume;
+  const activeChapter = rows?.[chapterIndex];
+  const activeVolume = rows?.[chapterIndex]?.volume;
 
   const {
     data: infiniteData,
@@ -221,21 +236,217 @@ export default function LightBoxBase() {
     },
   });
 
+  // const {
+  //   data: imageData,
+  //   // isError: isImageError,
+  //   // isPending: isImagePending,
+  //   // error: imageError,
+  // } = useQuery({
+  //   queryKey: ["chapterImage", chapterId],
+  //   queryFn: async () => {
+  //     const res = await axiosMangaInstance.get(`/chapter-image/${chapterId}`);
+  //     return res.data;
+  //   },
+  // });
+
+  const anchorRef = useRef(null);
+
   const {
-    data: imageData,
-    // isError: isImageError,
-    // isPending: isImagePending,
-    // error: imageError,
-  } = useQuery({
-    queryKey: ["chapterImage", chapterId],
-    queryFn: async () => {
-      const res = await axiosMangaInstance.get(`/chapter-image/${chapterId}`);
-      return res.data;
+    data: chapterPages,
+    fetchNextPage: chapterFetchNextPage,
+    fetchPreviousPage: chapterFetchPreviousPage,
+    hasNextPage: chapterHasNextPage,
+    hasPreviousPage: chapterHasPreviousPage,
+    isFetching: chapterIsFetching,
+  } = useInfiniteQuery({
+    queryKey: ["chapterImage"],
+
+    queryFn: async ({ pageParam }) => {
+      const res = await axiosMangaInstance.get(
+        `/chapter-image/${pageParam.chapterId}`,
+      );
+
+      return {
+        images: res.data.data,
+        chapterId: pageParam.chapterId,
+        chapterIndex: pageParam.chapterIndex,
+        nextChapterId: getNextChapter(pageParam.chapterIndex),
+        prevChapterId: getPrevChapter(pageParam.chapterIndex),
+      };
     },
-    enabled: !!chapterId,
+
+    initialPageParam: {
+      chapterId,
+      chapterIndex,
+    },
+
+    getNextPageParam: (lastPage) => {
+      return lastPage.nextChapterId
+        ? {
+            chapterId: lastPage.nextChapterId,
+            chapterIndex: lastPage.chapterIndex + 1,
+          }
+        : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      if (!firstPage.prevChapterId) return undefined;
+
+      return {
+        chapterId: firstPage.prevChapterId,
+        chapterIndex: firstPage.chapterIndex - 1,
+      };
+    },
+    maxPages: 3,
+    placeholderData: keepPreviousData,
+    enabled: rows.length !== 0 && chapterIndex !== -1,
   });
 
-  const slides = imageData?.data;
+  const slides = useMemo(() => {
+    return (
+      chapterPages?.pages.flatMap((chapter) =>
+        chapter.images.map((img) => ({
+          ...img,
+          chapterId: chapter.chapterId,
+        })),
+      ) ?? []
+    );
+  }, [chapterPages]);
+
+  const PREFETCH_THRESHOLD = 5;
+
+  useEffect(() => {
+    if (!slides.length) return;
+
+    const needsNext = pageIndex >= slides.length - PREFETCH_THRESHOLD;
+    const needsPrev = pageIndex < PREFETCH_THRESHOLD;
+
+    if (needsNext && chapterHasNextPage && !chapterIsFetching) {
+      chapterFetchNextPage();
+    }
+
+    if (needsPrev && chapterHasPreviousPage && !chapterIsFetching) {
+      chapterFetchPreviousPage();
+    }
+  }, [
+    pageIndex,
+    slides.length,
+    chapterFetchNextPage,
+    chapterFetchPreviousPage,
+    chapterHasNextPage,
+    chapterHasPreviousPage,
+    chapterIsFetching,
+  ]);
+
+  useEffect(() => {
+    if (!anchorRef.current || !slides.length) return;
+
+    const newIndex = slides.findIndex(
+      (slide) => slide.src === anchorRef.current,
+    );
+
+    if (newIndex !== -1 && newIndex !== pageIndex) {
+      setPageIndex(newIndex);
+    }
+  }, [pageIndex, slides]);
+
+  // a
+  const a = slides.findIndex((slide) => slide.chapterId === chapterId);
+  // b
+  const b = slides?.filter((slide) => slide.chapterId === chapterId)?.length;
+
+  console.log(b);
+  // room events
+  useEffect(() => {
+    function handleRoomCreated({ roomId }) {
+      setJoinedRoom(roomId);
+      setIsHost(true);
+    }
+
+    function handleJoinedRoom({ roomId, isHost, state }) {
+      setJoinedRoom(roomId);
+      setIsHost(isHost);
+
+      if (state) {
+        setPageIndex(state.page);
+      }
+    }
+
+    function handleError(msg) {
+      console.log("error:", msg);
+    }
+
+    function handleRoomClosed() {
+      console.log("room closed");
+      setJoinedRoom(null);
+      setIsHost(false);
+    }
+
+    function handleReceiveMessage(data) {
+      console.log("received:", data);
+
+      setMessages((prev) => [...prev, data]);
+    }
+
+    function handleStateUpdate(state) {
+      console.log("State update received:", state);
+
+      isRemoteUpdate.current = true;
+
+      if (setPageIndex) {
+        setPageIndex(state.page);
+      }
+    }
+
+    socket.on("room_created", handleRoomCreated);
+    socket.on("joined_room", handleJoinedRoom);
+    socket.on("error_msg", handleError);
+    socket.on("room_closed", handleRoomClosed);
+    socket.on("receive_message", handleReceiveMessage);
+    socket.on("state_update", handleStateUpdate);
+
+    return () => {
+      socket.off("room_created", handleRoomCreated);
+      socket.off("joined_room", handleJoinedRoom);
+      socket.off("error_msg", handleError);
+      socket.off("room_closed", handleRoomClosed);
+      socket.off("receive_message", handleReceiveMessage);
+      socket.off("state_update", handleStateUpdate);
+    };
+  }, [socket]);
+
+  function createRoom() {
+    if (!socket) return;
+
+    console.log("creating room...");
+    socket.emit("create_room");
+  }
+
+  function joinRoom() {
+    if (!socket || !roomInput) return;
+
+    console.log("joining room:", roomInput);
+    socket.emit("join_room", { roomId: roomInput });
+  }
+
+  function sendMessage() {
+    if (!joinedRoom || !message) return;
+
+    socket.emit("send_message", {
+      roomId: joinedRoom,
+      message,
+    });
+
+    setMessage("");
+  }
+
+  function sendStateUpdate(state) {
+    if (!joinedRoom || !isHost) return;
+
+    socket.emit("sync_state", {
+      roomId: joinedRoom,
+      state,
+    });
+  }
 
   return (
     <div className="light-box-base">
@@ -244,13 +455,15 @@ export default function LightBoxBase() {
         slides={slides || []}
         plugins={[
           Inline,
-          Counter,
+          // Counter,
+          CustomCounterPlugin,
           Fullscreen,
           Download,
           Share,
           Slideshow,
           Zoom,
-          ReaderPlugin,
+          // ReaderPlugin,
+          // RoomPlugin,
         ]}
         carousel={{
           finite: carousel.finite,
@@ -291,7 +504,7 @@ export default function LightBoxBase() {
           setSlideshow,
           pageIndex,
           setPageIndex,
-          slidesLength: slides?.length - 1,
+          slidesLength: Math.max(1, slides?.length - 1),
         }}
         reader={{
           activeChapter,
@@ -304,7 +517,7 @@ export default function LightBoxBase() {
           isError,
           error,
           rows,
-          index,
+          index: chapterIndex,
           chapterId,
           handleOnClickNavigation,
           language,
@@ -321,9 +534,55 @@ export default function LightBoxBase() {
           isFetching,
           isFetchingNextPage,
         }}
+        room={{
+          isRemoteUpdate,
+          socket,
+          createRoom,
+          roomInput,
+          setRoomInput,
+          joinRoom,
+          joinedRoom,
+          isHost,
+          message,
+          setMessage,
+          sendMessage,
+          messages,
+          sendStateUpdate,
+        }}
+        counter={{
+          activeChapterCurrentIndex: pageIndex - a + 1,
+          activeChapterSlideLength: b - a,
+        }}
         on={{
           view: ({ index: currentIndex }) => {
             setPageIndex(currentIndex);
+
+            const currentSlide = slides[currentIndex];
+            if (currentSlide) {
+              anchorRef.current = currentSlide.src; // 🔥 anchor
+
+              if (currentSlide.chapterId !== chapterId) {
+                navigate(
+                  `/test/${mangaId}/${currentSlide.chapterId}/${language}`,
+                  { replace: true }, // IMPORTANT
+                );
+              }
+            }
+
+            if (isRemoteUpdate.current) {
+              isRemoteUpdate.current = false;
+              return;
+            }
+
+            if (!isHost || !joinedRoom) return;
+
+            socket.emit("sync_state", {
+              roomId: joinedRoom,
+              state: {
+                chapter: chapterId,
+                page: currentIndex,
+              },
+            });
           },
         }}
       />
