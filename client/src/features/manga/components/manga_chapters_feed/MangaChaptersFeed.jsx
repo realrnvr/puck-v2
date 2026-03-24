@@ -28,6 +28,7 @@ export default function MangaChaptersFeed({ mangaId }) {
     error,
     fetchNextPage,
     hasNextPage,
+    isFetching,
     isFetchingNextPage,
     isPending,
   } = useInfiniteQuery({
@@ -166,9 +167,9 @@ export default function MangaChaptersFeed({ mangaId }) {
         style={{ height: "600px" }}
         data={flatList}
         rangeChanged={handleRangeChange}
-        context={{ hasNextPage }}
+        context={{ isFetchingNextPage, hasNextPage }}
         endReached={() => {
-          if (hasNextPage && !isFetchingNextPage) {
+          if (hasNextPage && !isFetching) {
             fetchNextPage();
           }
         }}
