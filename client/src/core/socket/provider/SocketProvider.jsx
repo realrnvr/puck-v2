@@ -1,6 +1,6 @@
-import { SocketContext } from "../context/SocketContext";
-import { socket } from "../core/socket";
+// import { SocketContext } from "../context/SocketContext";
+// import { socket } from "../core/socket";
 
-export function SocketProvider({ children }) {
-  return <SocketContext value={socket}>{children}</SocketContext>;
-}
+// export function SocketProvider({ children }) {
+//   return <SocketContext value={socket}>{children}</SocketContext>;
+// }
