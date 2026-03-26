@@ -1,41 +1,57 @@
+// router.js — move router OUTSIDE any component, accept queryClient as param
 import { createBrowserRouter } from "react-router";
+import { axiosMangaInstance } from "../../features/manga/api/axios.manga.js";
 import { RouterProvider } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import App from "../../App.jsx";
-import Test from "../../features/manga/pages/test/Test.jsx";
-import MangaDetails from "../../features/manga/pages/manga_details/MangaDetails.jsx";
-import MangaViwer from "../../features/manga/pages/manga_viewer/MangaViwer.jsx";
-import LightBoxBase from "../../features/manga/viewer/core/lightbox/LightBoxBase.jsx";
 import Reproduce from "../../features/manga/pages/test/Reproduce.jsx";
+import MangaDetails from "../../features/manga/pages/manga_details/MangaDetails.jsx";
+import MangaViewer from "../../features/manga/pages/manga_viewer/MangaViewer.jsx";
+import Skeleton from "../../features/manga/skeletons/Skeleton.jsx";
+import RootErrorBoundary from "../../features/manga/errors/RootErrorBoundary.jsx";
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <App />,
-  },
-  {
-    path: "/test/:mangaId/:chapterId/:language",
-    element: <LightBoxBase />,
-  },
-  // {
-  //   path: "/test1/:mangaId/:chapterId/:language",
-  //   element: <Test />,
-  // },
-  {
-    path: "/reproduce",
-    element: <Reproduce />,
-  },
-  {
-    path: "/manga-details/:mangaId",
-    element: <MangaDetails />,
-  },
-  {
-    path: "/chapter/:chapterId",
-    element: <MangaViwer />,
-  },
-]);
+function createRouter(queryClient) {
+  return createBrowserRouter([
+    {
+      path: "/",
+      element: <App />,
+    },
+    {
+      path: "/viewer/:mangaId/:chapterId/:language",
+      HydrateFallback: Skeleton,
+      loader: ({ params }) => {
+        queryClient.prefetchQuery({
+          queryKey: ["chapter_image", params.chapterId],
+          queryFn: async () => {
+            const response = await axiosMangaInstance.get(
+              `/chapter-image/${params.chapterId}`,
+            );
+            return response.data;
+          },
+        });
+        return null;
+      },
+      element: <MangaViewer />,
+      ErrorBoundary: RootErrorBoundary,
+    },
+    {
+      path: "/reproduce",
+      element: <Reproduce />,
+    },
+    {
+      path: "/manga-details/:mangaId",
+      element: <MangaDetails />,
+    },
+  ]);
+}
 
 function RouterProviderBase() {
+  const queryClient = useQueryClient();
+
+  const router = useMemo(() => createRouter(queryClient), [queryClient]);
+
   return <RouterProvider router={router} />;
 }
 
