@@ -14,6 +14,10 @@ export async function getMangaChapters(req, res) {
   const response = await axios.get(
     `https://api.mangadex.org/manga/${mangaId}/feed`,
     {
+      headers: {
+        "User-Agent": "PUCK/1.0",
+        Accept: "application/json",
+      },
       params: {
         limit: safeLimit,
         offset,
@@ -48,6 +52,10 @@ export async function getMangaAggregate(req, res) {
   const response = await axios.get(
     `https://api.mangadex.org/manga/${mangaId}/aggregate`,
     {
+      headers: {
+        "User-Agent": "PUCK/1.0",
+        Accept: "application/json",
+      },
       params: {
         ...(translatedLanguage && {
           "translatedLanguage[]": normalizeArray(translatedLanguage),
@@ -82,6 +90,10 @@ export async function getChapterVariants(req, res) {
   const safeOffset = Number(offset);
 
   const response = await axios.get(`https://api.mangadex.org/chapter`, {
+    headers: {
+      "User-Agent": "PUCK/1.0",
+      Accept: "application/json",
+    },
     params: {
       manga: mangaId,
       volume,
@@ -116,6 +128,10 @@ export async function getChapterStatics(req, res) {
   const response = await axios.get(
     `https://api.mangadex.org/chapter/${chapterId}`,
     {
+      headers: {
+        "User-Agent": "PUCK/1.0",
+        Accept: "application/json",
+      },
       params: {
         "includes[]": ["scanlation_group", "manga", "user"],
       },
@@ -132,9 +148,20 @@ export async function getChapterImages(req, res) {
     query: { quality = "data" },
   } = req;
 
-  const response = await axios.get(
-    `https://api.mangadex.org/at-home/server/${chapterId}?forcePort443=false`,
-  );
+  let response;
+  try {
+    response = await axios.get(
+      `https://api.mangadex.org/at-home/server/${chapterId}?forcePort443=false`,
+      {
+        headers: {
+          "User-Agent": "PUCK/1.0",
+          Accept: "application/json",
+        },
+      },
+    );
+  } catch (error) {
+    console.log(error);
+  }
 
   const {
     baseUrl,
@@ -148,6 +175,7 @@ export async function getChapterImages(req, res) {
       }/api/v1/manga/proxy/chapter-image/${encodeURIComponent(
         baseUrl,
       )}/${quality}/${hash}/${val}`,
+      chapterId: chapterId,
     };
   });
 
