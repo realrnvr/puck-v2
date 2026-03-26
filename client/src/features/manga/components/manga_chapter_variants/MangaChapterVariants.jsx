@@ -21,7 +21,7 @@ function MangaChapterVariants({ mangaId, row }) {
 
   function handleChapterNavigation(chapter) {
     navigate(
-      `/test/${mangaId}/${chapter.id}/${chapter.attributes.translatedLanguage}`,
+      `/viewer/${mangaId}/${chapter.id}/${chapter.attributes.translatedLanguage}`,
     );
   }
 

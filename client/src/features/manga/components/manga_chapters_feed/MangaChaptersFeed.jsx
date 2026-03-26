@@ -19,7 +19,7 @@ export default function MangaChaptersFeed({ mangaId }) {
 
   function handleChapterNavigation(chapter) {
     navigate(
-      `/test/${mangaId}/${chapter.id}/${chapter.attributes.translatedLanguage}`,
+      `/viewer/${mangaId}/${chapter.id}/${chapter.attributes.translatedLanguage}`,
     );
   }
 
