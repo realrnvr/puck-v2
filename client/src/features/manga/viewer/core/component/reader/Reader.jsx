@@ -3,18 +3,36 @@ import "./reader.css";
 import { Virtuoso } from "react-virtuoso";
 import { InfiniteScrollFooter } from "../../../component/infinite_scroll_footer/InfiniteScrollFooter";
 import { animationOptions, imageFitOptions } from "../../../assets/data";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Range } from "react-range";
 import { useWindowManager } from "../../../../../window_system/hooks/useWindowManager";
+import { useMangaController } from "../../../hooks/useMangaController";
 
 import Select from "react-select";
 import Window from "../../../../../window_system/components/window/Window";
 
-export default function Reader({ children, reader, control }) {
+export default function Reader({ children, control }) {
   // window state
   const [imageFit, setImageFit] = useState(false);
   const [behaviors, setBehaviors] = useState(false);
   const manager = useWindowManager();
+  const { chapter, navigation, aggregate, statics, variants } =
+    useMangaController();
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "ArrowRight" && control.isAtEnd) {
+        navigation.next();
+      }
+
+      if (e.key === "ArrowLeft" && control.isAtStart) {
+        navigation.prev();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigation, control]);
 
   return (
     <>
@@ -835,45 +853,45 @@ export default function Reader({ children, reader, control }) {
         {/* @__Behaviors_Window__ */}
         <div className="dummy__chapter-container">
           <div className="dummy__meta">
-            {reader.staticsIsPending && <div>Loading...</div>}
-            {reader.staticsIsError && <div>{reader.staticsError.message}</div>}
-            {!reader.staticsIsPending && !reader.staticsError && (
+            {statics.isPending && <div>Loading...</div>}
+            {statics.isError && <div>{statics.error.message}</div>}
+            {!statics.isPending && !statics.isError && (
               <div className="dummy__chapter-info">
                 <div>
                   <p>
-                    Manga: {Object.values(reader.mangaData.attributes.title)[0]}
+                    Manga: {Object.values(statics.manga.attributes.title)[0]}
                   </p>
-                  <p>Chapter: {reader.staticsData.data.attributes.title}</p>
+                  <p>Chapter: {statics.data.data.attributes.title}</p>
                 </div>
                 <div>
-                  <p>volume: {reader.activeChapter?.volume}</p>
-                  <p>chapter: {reader.activeChapter?.chapter}</p>
+                  <p>volume: {chapter.activeRow?.volume}</p>
+                  <p>chapter: {chapter.activeRow?.chapter}</p>
                 </div>
               </div>
             )}
           </div>
           <div className="dummy__nav-btn-container">
             <button
-              onClick={reader.handlePrevChapter}
-              disabled={!reader.getPrevChapter(reader.rows, reader.index)}
+              onClick={navigation.prev}
+              disabled={!navigation.getPrevId(chapter.index)}
             >
               {"<"}
             </button>
-            <p>Chapter: {reader.activeChapter?.chapter}</p>
+            <p>Chapter: {chapter.activeRow?.chapter}</p>
             <button
-              onClick={reader.handleNextChapter}
-              disabled={!reader.getNextChapter(reader.rows, reader.index)}
+              onClick={navigation.next}
+              disabled={!navigation.getNextId(chapter.index)}
             >
               {">"}
             </button>
           </div>
           <div className="dummy__chapter-list-container">
-            {reader.isPending && <div>Loading...</div>}
-            {reader.isError && <div>{reader.error.message}</div>}
-            {!reader.isPending && !reader.isError && (
+            {aggregate.isPending && <div>Loading...</div>}
+            {aggregate.isError && <div>{aggregate.error.message}</div>}
+            {!aggregate.isPending && !aggregate.isError && (
               <Virtuoso
                 className="reader__list"
-                data={reader.rows}
+                data={chapter.list}
                 itemContent={(_, row) => {
                   if (row.type === "volume") {
                     return (
@@ -881,7 +899,7 @@ export default function Reader({ children, reader, control }) {
                         className="reader__list-volume-header"
                         style={{
                           backgroundColor:
-                            row.volume === reader.activeVolume ? "pink" : null,
+                            row.volume === chapter.activeVolume ? "pink" : null,
                         }}
                       >
                         <span>
@@ -896,14 +914,14 @@ export default function Reader({ children, reader, control }) {
                       <div
                         className="reader__list-chapter"
                         style={{
-                          backgroundColor: row.chapterId.has(reader.chapterId)
+                          backgroundColor: row.chapterId.has(chapter.id)
                             ? "pink"
                             : null,
                         }}
                         onClick={() =>
-                          reader.handleOnClickNavigation({
+                          navigation.goTo({
                             newChapterId: row.chapterId.values().next().value,
-                            newLanguage: reader.language,
+                            newLanguage: chapter.language,
                           })
                         }
                       >
@@ -915,18 +933,16 @@ export default function Reader({ children, reader, control }) {
               />
             )}
             <div className="dummy__feed-list">
-              {reader.isInifintePending && <div>Loading...</div>}
-              {reader.infiniteError && (
-                <div>Error: {reader.infiniteError.message}</div>
-              )}
-              {!reader.isInifintePending && !reader.infiniteError && (
+              {variants.isPending && <div>Loading...</div>}
+              {variants.error && <div>Error: {variants.error.message}</div>}
+              {!variants.isPending && !variants.error && (
                 <Virtuoso
-                  data={reader.infiniteData}
+                  data={variants.data}
                   context={{
-                    hasNextPage: reader.hasNextPage,
-                    fetchNextPage: reader.fetchNextPage,
-                    isFetching: reader.isFetching,
-                    isFetchingNextPage: reader.isFetchingNextPage,
+                    hasNextPage: variants.hasNext,
+                    fetchNextPage: variants.fetchNext,
+                    isFetching: variants.isFetching,
+                    isFetchingNextPage: variants.isFetchingNext,
                   }}
                   itemContent={(_, row) => {
                     const attr = row.attributes;
@@ -945,10 +961,10 @@ export default function Reader({ children, reader, control }) {
                         className="manga-chapter-variants__chapter-card"
                         style={{
                           backgroundColor:
-                            row.id === reader.chapterId ? "pink" : null,
+                            row.id === chapter.id ? "pink" : null,
                         }}
                         onClick={() =>
-                          reader.handleOnClickNavigation({
+                          navigation.goTo({
                             newChapterId: row.id,
                             newLanguage: attr.translatedLanguage,
                           })
