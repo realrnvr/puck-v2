@@ -4,7 +4,6 @@ import { createModule } from "yet-another-react-lightbox";
 
 const ReaderModule = createModule("Reader", Reader);
 
-export default function ReaderPlugin({ addSibling, contains }) {
+export default function ReaderPlugin({ addSibling }) {
   addSibling("controller", ReaderModule);
-  // console.log("Contains Reader Module:", contains("Reader"));
 }
