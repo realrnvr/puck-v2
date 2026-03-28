@@ -11,6 +11,9 @@ import MangaDetails from "../../features/manga/pages/manga_details/MangaDetails.
 import MangaViewer from "../../features/manga/pages/manga_viewer/MangaViewer.jsx";
 import Skeleton from "../../features/manga/skeletons/Skeleton.jsx";
 import RootErrorBoundary from "../../features/manga/errors/RootErrorBoundary.jsx";
+import LightBoxPropsProvider from "../../features/manga/viewer/providers/LightBoxPropsProvider.jsx";
+import MangaControllerProvider from "../../features/manga/viewer/providers/MangaControllerProvider.jsx";
+import ChapterImagesProvider from "../../features/manga/viewer/providers/ChapterImagesProvider.jsx";
 
 function createRouter(queryClient) {
   return createBrowserRouter([
@@ -33,7 +36,15 @@ function createRouter(queryClient) {
         });
         return null;
       },
-      element: <MangaViewer />,
+      element: (
+        <LightBoxPropsProvider>
+          <MangaControllerProvider>
+            <ChapterImagesProvider>
+              <MangaViewer />
+            </ChapterImagesProvider>
+          </MangaControllerProvider>
+        </LightBoxPropsProvider>
+      ),
       ErrorBoundary: RootErrorBoundary,
     },
     {
