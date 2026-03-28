@@ -83,7 +83,6 @@ function Test({ children, room }) {
 
 const RoomModule = createModule("Room", Test);
 
-export default function RoomPlugin({ addSibling, contains }) {
+export default function RoomPlugin({ addSibling }) {
   addSibling("controller", RoomModule);
-  // console.log("Contains Room Module: ", contains("Room"));
 }
